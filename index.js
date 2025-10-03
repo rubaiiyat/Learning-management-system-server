@@ -71,6 +71,18 @@ async function run() {
       }
     });
 
+    // Show admin users
+    app.get("/admin", async (req, res) => {
+      try {
+        const result = await adminCollection.find().toArray();
+        res.status(200).json({ result });
+      } catch (error) {
+        res.status(404).json({
+          message: "No Admin found",
+        });
+      }
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
