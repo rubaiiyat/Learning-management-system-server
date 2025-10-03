@@ -57,16 +57,19 @@ async function run() {
       }
     });
 
-    /*  // Admin info and create admin collection
-    app.post("/admin",async(req,res)=>{
-      const adminUser=req.body
+    // Admin info and create admin collection
+    app.post("/admin", async (req, res) => {
+      const adminUser = req.body;
       try {
-        const result=await adminCollection.insertOne(adminUser)
-        res.status(200).j
+        const result = await adminCollection.insertOne(adminUser);
+        res.status(200).json({
+          message: "Inserted",
+          title: adminUser.name,
+        });
       } catch (error) {
-        
+        res.status(404).json({ message: "Not Inserted" });
       }
-    }) */
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
