@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion, Db } = require("mongodb");
+const { MongoClient, ServerApiVersion, Db, ObjectId } = require("mongodb");
 require("dotenv").config();
 const express = require("express");
 const app = express();
@@ -86,6 +86,43 @@ async function run() {
         res
           .status(500)
           .json({ message: "Error updating user", error: error.message });
+      }
+    });
+
+    // Create Course Api
+    app.post("/courses", async (req, res) => {
+      const course = req.body;
+      try {
+        const addCourse = await courseCollection.insertOne(course);
+        res
+          .status(200)
+          .json({ message: "Add Successful", title: course.title });
+      } catch (error) {
+        res.status(404).json({ message: "Not created" });
+      }
+    });
+
+    // ShowCourse Api
+    app.get("/courses", async (req, res) => {
+      try {
+        const course = await courseCollection.find().toArray();
+        res.status(200).json({ course });
+      } catch (error) {
+        res.status(404).json({ message: "No course availabe" });
+      }
+    });
+
+    app.get("/course/:id", async (req, res) => {
+      const courseId = req.params.id;
+      try {
+        const result = await courseCollection.findOne({
+          _id: new ObjectId(courseId),
+        });
+        if (!result)
+          return res.status(404).json({ message: "Course not found" });
+        res.status(200).json({ result });
+      } catch (error) {
+        res.status(404).json({ message: error.message });
       }
     });
 
