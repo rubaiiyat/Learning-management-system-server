@@ -48,7 +48,15 @@ async function run() {
     // Show Users
     app.get("/users", async (req, res) => {
       try {
-        const result = await userCollection.find().toArray();
+        const email = req.query.email;
+        let query = {};
+        if (email) {
+          query = { email };
+        }
+        const result = await userCollection.find(query).toArray();
+        if (result.length === 0) {
+          return res.status(404).json({ message: "No User Found" });
+        }
         res.status(200).json({ result });
       } catch (error) {
         res.status(404).json({
