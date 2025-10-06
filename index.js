@@ -65,6 +65,30 @@ async function run() {
       }
     });
 
+    // Update User
+    app.put("/user/update/:email", async (req, res) => {
+      const email = req.params.email;
+      const updateData = req.body;
+
+      try {
+        const result = await userCollection.updateOne(
+          { email },
+          { $set: updateData }
+        );
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json({
+          message: "User Updated",
+          result,
+        });
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Error updating user", error: error.message });
+      }
+    });
+
     // Admin info and create admin collection
     app.post("/admin", async (req, res) => {
       const adminUser = req.body;
