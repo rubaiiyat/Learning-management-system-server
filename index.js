@@ -126,6 +126,59 @@ async function run() {
       }
     });
 
+    // Post/ Enrolled Course
+    app.post("/enroll", async (req, res) => {
+      const { email, courseId } = req.body;
+
+      if (!email || !courseId) {
+        return res
+          .status(404)
+          .json({ message: "Email and courseId is required" });
+      }
+
+      try {
+        const user = await userCollection.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (user.enrolledCourse?.includes(courseId)) {
+          return res.status(400).json({ message: "Already Enrolled" });
+        }
+        await userCollection.updateOne(
+          { email },
+          { $addToSet: { enrolledCourse: courseId } }
+        );
+
+        res.status(200).json({ message: "Enroll successful!" });
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Enrolled failed", error: error.message });
+      }
+    });
+
+    // Get/ Show my class
+    app.get("/myclasses", async (req, res) => {
+      const email = req.query.email;
+      if (!email) return res.status(404).json({ message: "Email required" });
+
+      try {
+        const user = await userCollection.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const enrolledIds = user.enrolledCourse || [];
+
+        const courses = await courseCollection
+          .find({ _id: { $in: enrolledIds.map((id) => new ObjectId(id)) } })
+          .toArray();
+
+        res.status(200).json({ courses });
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Failed to fetch classes", error: error.message });
+      }
+    });
+
     // Admin info and create admin collection
     app.post("/admin", async (req, res) => {
       const adminUser = req.body;
