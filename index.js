@@ -156,6 +156,27 @@ async function run() {
       }
     });
 
+    // Check User Enrollment
+    app.get("/check-enrollment", async (req, res) => {
+      const { email, courseId } = req.query;
+      if (!email || !courseId) {
+        return res.status(404).json({ message: "Email and courseId required" });
+      }
+
+      try {
+        const user = await userCollection.findOne({ email });
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        const enrolled = user.enrolledCourse?.includes(courseId);
+        res.status(200).json({ enrolled });
+      } catch (error) {
+        res
+          .status(500)
+          .json({ message: "Error checking enrollment", error: error.message });
+      }
+    });
+
     // Get/ Show my class
     app.get("/myclasses", async (req, res) => {
       const email = req.query.email;
