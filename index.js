@@ -221,6 +221,28 @@ async function run() {
       }
     });
 
+    app.put("/set-mark/assignment", async (req, res) => {
+      const id = req.params.id;
+      const { assignment } = req.body;
+
+      try {
+        const result = await assignmentCollection.updateOne(
+          {
+            _id: new ObjectId(id),
+          },
+          { $set: { mark: assignment } }
+        );
+
+        if (result.modifiedCount > 0) {
+          res.status(200).json({ message: "Updated successfully" });
+        } else {
+          res.status(404).json({ message: "Assignment not found" });
+        }
+      } catch (error) {
+        res.status(500).json({ message: "Server not found" });
+      }
+    });
+
     // Admin info and create admin collection
     app.post("/admin", async (req, res) => {
       const adminUser = req.body;
