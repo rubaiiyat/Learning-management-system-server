@@ -203,12 +203,21 @@ async function run() {
 
     // Submit assignment
     app.post("/submit-assignment", async (req, res) => {
-      const assignment = req.body();
+      const assignment = req.body;
       try {
         const result = await assignmentCollection.insertOne(assignment);
         res.status(200).json({ message: "submited" });
       } catch (error) {
         res.status(404).json({ message: "Not submited" });
+      }
+    });
+
+    app.get("/submit-assignment", async (req, res) => {
+      try {
+        const result = await assignmentCollection.find().toArray();
+        res.status(200).json({ result });
+      } catch (error) {
+        res.status(404).json({ message: "Not Found" });
       }
     });
 
