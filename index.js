@@ -28,6 +28,7 @@ async function run() {
     const userCollection = database.collection("users");
     const adminCollection = database.collection("admin");
     const courseCollection = database.collection("course");
+    const assignmentCollection = database.collection("assignment");
 
     // create users api
     app.post("/users", async (req, res) => {
@@ -197,6 +198,17 @@ async function run() {
         res
           .status(500)
           .json({ message: "Failed to fetch classes", error: error.message });
+      }
+    });
+
+    // Submit assignment
+    app.post("/submit-assignment", async (req, res) => {
+      const assignment = req.body();
+      try {
+        const result = await assignmentCollection.insertOne(assignment);
+        res.status(200).json({ message: "submited" });
+      } catch (error) {
+        res.status(404).json({ message: "Not submited" });
       }
     });
 
