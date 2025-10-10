@@ -221,16 +221,16 @@ async function run() {
       }
     });
 
-    app.put("/set-mark/assignment", async (req, res) => {
+    app.put("/set-mark/assignment/:id", async (req, res) => {
       const id = req.params.id;
-      const { assignment } = req.body;
+      const { mark } = req.body;
 
       try {
         const result = await assignmentCollection.updateOne(
           {
             _id: new ObjectId(id),
           },
-          { $set: { mark: assignment } }
+          { $set: { mark: mark } }
         );
 
         if (result.modifiedCount > 0) {
