@@ -221,6 +221,34 @@ async function run() {
       }
     });
 
+    // Check Submission
+    app.get("/check-submission", async (req, res) => {
+      const { userEmail, courseId } = req.query;
+      if (!userEmail || !courseId) {
+        return res.status(404).json({ message: "Misssing something" });
+      }
+
+      try {
+        const submission = await assignmentCollection.findOne({
+          userEmail,
+          courseId,
+        });
+        if (!submission) {
+          return res.json({ exists: false, canSubmit: true });
+        }
+        const canSubmit = !submission.mark || submission.mark == 0;
+
+        res.json({
+          exists: true,
+          canSubmit,
+          assignmentLink: submission.assignmentLink,
+          mark: submission.mark,
+        });
+      } catch (error) {
+        res.status(500).json({ message: "Server error" });
+      }
+    });
+
     app.put("/set-mark/assignment/:id", async (req, res) => {
       const id = req.params.id;
       const { mark } = req.body;
