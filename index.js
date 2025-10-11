@@ -202,12 +202,14 @@ async function run() {
     });
 
     // Submit assignment
+    // Submit assignment
     app.post("/submit-assignment", async (req, res) => {
-      const { courseId, userEmail, assignmentLink } = req.body;
+      const { courseId, assignmentName, userEmail, assignmentLink } = req.body;
 
-      if (!courseId || !userEmail || !assignmentLink) {
+      if (!courseId || !userEmail) {
         return res.status(400).json({ message: "Missing required fields" });
       }
+
       try {
         const existing = await assignmentCollection.findOne({
           courseId,
@@ -222,14 +224,19 @@ async function run() {
 
         const result = await assignmentCollection.insertOne({
           courseId,
+          assignmentName,
           userEmail,
           assignmentLink,
           mark: 0,
           status: "Pending",
         });
-        res.status(200).json({ message: "submited" });
+
+        res.status(200).json({ message: "Assignment submitted successfully!" });
       } catch (error) {
-        res.status(404).json({ message: "Not submited" });
+        console.error(error);
+        res
+          .status(500)
+          .json({ message: "Not submitted", error: error.message });
       }
     });
 
@@ -246,7 +253,7 @@ async function run() {
     /* app.get("/check-submission", async (req, res) => {
       const { userEmail, courseId } = req.query;
       if (!userEmail || !courseId) {
-        return res.status(404).json({ message: "Misssing something" });
+        return res.status(404).json({ message: "Missing something" });
       }
 
       try {
