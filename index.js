@@ -202,7 +202,6 @@ async function run() {
     });
 
     // Submit assignment
-    // Submit assignment
     app.post("/submit-assignment", async (req, res) => {
       const { courseId, assignmentName, userEmail, assignmentLink } = req.body;
 
@@ -249,44 +248,16 @@ async function run() {
       }
     });
 
-    // Check Submission
-    /* app.get("/check-submission", async (req, res) => {
-      const { userEmail, courseId } = req.query;
-      if (!userEmail || !courseId) {
-        return res.status(404).json({ message: "Missing something" });
-      }
-
-      try {
-        const submission = await assignmentCollection.findOne({
-          userEmail,
-          courseId,
-        });
-        if (!submission) {
-          return res.json({ exists: false, canSubmit: true });
-        }
-        const canSubmit = !submission.mark || submission.mark == 0;
-
-        res.json({
-          exists: true,
-          canSubmit,
-          assignmentLink: submission.assignmentLink,
-          mark: submission.mark,
-        });
-      } catch (error) {
-        res.status(500).json({ message: "Server error" });
-      }
-    }); */
-
     app.put("/set-mark/assignment/:id", async (req, res) => {
       const id = req.params.id;
-      const { mark } = req.body;
+      const { mark, status } = req.body;
 
       try {
         const result = await assignmentCollection.updateOne(
           {
             _id: new ObjectId(id),
           },
-          { $set: { mark: mark } }
+          { $set: { mark: mark, status: status } }
         );
 
         if (result.modifiedCount > 0) {
