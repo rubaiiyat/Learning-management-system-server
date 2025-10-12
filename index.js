@@ -7,13 +7,11 @@ const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 
-app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
-
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
@@ -70,7 +68,7 @@ async function run() {
 
         res.cookie("token", token, {
           httpOnly: true,
-          secure: true,
+          secure: false,
           sameSite: "strict",
           maxAge: 24 * 60 * 60 * 1000,
         });
@@ -93,6 +91,18 @@ async function run() {
       });
     };
 
+    app.get("/verify-token", (req, res) => {
+      const token = req.cookies.token;
+
+      if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+      jwt.verify(token, secret, (err, decoded) => {
+        if (err) return res.status(403).json({ message: "Forbidden" });
+
+        res.status(200).json({ email: decoded.email, role: decoded.role });
+      });
+    });
+
     app.get("/admin-data", verifyJWT, async (req, res) => {
       if (req.user.role !== "Admin")
         return res.status(404).json({ message: "Not Admin" });
@@ -101,8 +111,12 @@ async function run() {
       res.status(200).json({ admins });
     });
 
-    app.post("/logout", async (req, res) => {
-      res.clearCookie("token");
+    app.post("/logout", (req, res) => {
+      res.clearCookie("token", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "strict",
+      });
       res.status(200).json({ message: "Logout successful" });
     });
 
