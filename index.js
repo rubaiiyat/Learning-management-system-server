@@ -4,11 +4,13 @@ const express = require("express");
 const app = express();
 const port = 3000;
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 
 app.use(cors());
 app.use(express.json());
 
 const uri = process.env.MONGODB_URL;
+const secret = process.env.JWT_SECRET;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -44,6 +46,45 @@ async function run() {
           message: "Not Inserted",
         });
       }
+    });
+
+    app.post("/jwt", async (req, res) => {
+      const { email } = req.body;
+      if (!email) return res.status(404).json({ message: "Email required" });
+      try {
+        const user = await userCollection.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const token = jwt.sign({ email: user.email, role: user.role }, secret, {
+          expiresIn: "1d",
+        });
+        res.status(200).json({ token, role: user.role });
+        console.log(token);
+      } catch (error) {
+        res.status(500).json({ message: "jwt generate failed", error });
+      }
+    });
+
+    const verifyJWT = (req, res, next) => {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader) return res.status(404).json({ message: "Unauthorized" });
+
+      const token = authHeader.split(" ")[1];
+
+      jwt.verify(token, secret, (err, decoded) => {
+        if (err) return res.status(404).json({ message: "Forbidden" });
+        req.user = decoded;
+        next();
+      });
+    };
+
+    app.get("/admin-data", verifyJWT, async (req, res) => {
+      if (req.user.role !== "Admin")
+        return res.status(404).json({ message: "Not Admin" });
+
+      const admins = await userCollection.find().toArray();
+      res.status(200).json({ admins });
     });
 
     // Show Users
