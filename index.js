@@ -5,9 +5,18 @@ const app = express();
 const port = 3000;
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 
 const uri = process.env.MONGODB_URL;
 const secret = process.env.JWT_SECRET;
@@ -58,19 +67,24 @@ async function run() {
         const token = jwt.sign({ email: user.email, role: user.role }, secret, {
           expiresIn: "1d",
         });
+
+        res.cookie("token", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "strict",
+          maxAge: 24 * 60 * 60 * 1000,
+        });
+
         res.status(200).json({ token, role: user.role });
-        console.log(token);
       } catch (error) {
         res.status(500).json({ message: "jwt generate failed", error });
       }
     });
 
     const verifyJWT = (req, res, next) => {
-      const authHeader = req.headers.authorization;
+      const token = req.cookies.token;
 
-      if (!authHeader) return res.status(404).json({ message: "Unauthorized" });
-
-      const token = authHeader.split(" ")[1];
+      if (!token) return res.status(404).json({ message: "Unauthorized" });
 
       jwt.verify(token, secret, (err, decoded) => {
         if (err) return res.status(404).json({ message: "Forbidden" });
@@ -85,6 +99,11 @@ async function run() {
 
       const admins = await userCollection.find().toArray();
       res.status(200).json({ admins });
+    });
+
+    app.post("/logout", async (req, res) => {
+      res.clearCookie("token");
+      res.status(200).json({ message: "Logout successful" });
     });
 
     // Show Users
