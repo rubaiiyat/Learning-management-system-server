@@ -11,7 +11,11 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://lms-users-f5623.web.app",
+      "https://lms-users-f5623.firebaseapp.com",
+    ],
     credentials: true,
   })
 );
@@ -28,10 +32,22 @@ const client = new MongoClient(uri, {
   },
 });
 
+const verifyJWT = (req, res, next) => {
+  const token = req.cookies.token;
+
+  if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+  jwt.verify(token, secret, (err, decoded) => {
+    if (err) return res.status(403).json({ message: "Forbidden" });
+    req.user = decoded;
+    next();
+  });
+};
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const database = client.db("lms-server");
     const userCollection = database.collection("users");
@@ -68,8 +84,8 @@ async function run() {
 
         res.cookie("token", token, {
           httpOnly: true,
-          secure: false,
-          sameSite: "strict",
+          secure: process.env.NODE_ENV === "production" ? true : false,
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
           maxAge: 24 * 60 * 60 * 1000,
         });
 
@@ -79,33 +95,13 @@ async function run() {
       }
     });
 
-    const verifyJWT = (req, res, next) => {
-      const token = req.cookies.token;
-
-      if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-      jwt.verify(token, secret, (err, decoded) => {
-        if (err) return res.status(403).json({ message: "Forbidden" });
-        req.user = decoded;
-        next();
-      });
-    };
-
-    app.get("/verify-token", (req, res) => {
-      const token = req.cookies.token;
-
-      if (!token) return res.status(401).json({ message: "Unauthorized" });
-
-      jwt.verify(token, secret, (err, decoded) => {
-        if (err) return res.status(403).json({ message: "Forbidden" });
-
-        res.status(200).json({ email: decoded.email, role: decoded.role });
-      });
+    app.get("/verify-token", verifyJWT, async (req, res) => {
+      res.status(200).json({ email: req.user.email, role: req.user.role });
     });
 
     app.get("/admin-data", verifyJWT, async (req, res) => {
       if (req.user.role !== "Admin")
-        return res.status(404).json({ message: "Not Admin" });
+        return res.status(403).json({ message: "Not Admin" });
 
       const admins = await userCollection.find().toArray();
       res.status(200).json({ admins });
@@ -114,8 +110,9 @@ async function run() {
     app.post("/logout", (req, res) => {
       res.clearCookie("token", {
         httpOnly: true,
-        secure: false,
-        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production" ? true : false,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        maxAge: 0,
       });
       res.status(200).json({ message: "Logout successful" });
     });
@@ -371,7 +368,7 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
