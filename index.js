@@ -61,8 +61,8 @@ async function run() {
       try {
         const user = await userCollection.findOne({ email });
         if (!user) return res.status(404).json({ message: "User not found" });
-
-        const token = jwt.sign({ email: user.email, role: user.role }, secret, {
+        const role = user.role || "Student";
+        const token = jwt.sign({ email: user.email, role: role }, secret, {
           expiresIn: "1d",
         });
 
@@ -82,10 +82,10 @@ async function run() {
     const verifyJWT = (req, res, next) => {
       const token = req.cookies.token;
 
-      if (!token) return res.status(404).json({ message: "Unauthorized" });
+      if (!token) return res.status(401).json({ message: "Unauthorized" });
 
       jwt.verify(token, secret, (err, decoded) => {
-        if (err) return res.status(404).json({ message: "Forbidden" });
+        if (err) return res.status(403).json({ message: "Forbidden" });
         req.user = decoded;
         next();
       });
