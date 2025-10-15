@@ -126,13 +126,10 @@ async function run() {
           query = { email };
         }
         const result = await userCollection.find(query).toArray();
-        if (result.length === 0) {
-          return res.status(404).json({ message: "No User Found" });
-        }
         res.status(200).json({ result });
       } catch (error) {
-        res.status(404).json({
-          message: "No User Found",
+        res.status(500).json({
+          message: "Server Error",
         });
       }
     });
